@@ -5,7 +5,7 @@ using namespace Hina;
 
 int main() {
 
-    BasicForceSolver sol;
+    BekkerForceSolver sol;
     SoilPatch s;
     Wheel w;
     w.r = 10;

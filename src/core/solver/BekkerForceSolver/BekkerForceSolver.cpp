@@ -64,7 +64,7 @@ float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel)
         gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
         gsl_function F;
         F.function = integrand;
-        F.params = &p;
+        F.params = p;
         gsl_integration_qags (&F, 0, 1, 0, 1e-7, 1000, w, &result, &error);
         printf("result = %.18f\n", result);
         gsl_integration_workspace_free (w);
