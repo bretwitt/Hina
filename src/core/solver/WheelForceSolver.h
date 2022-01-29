@@ -18,8 +18,8 @@ namespace Hina {
 
         void initialize(SoilPatch soil, Wheel wheel);
         virtual void step() {};
-        virtual float getDrawbarPull() {};
-        virtual float getWheelSinkage() {};
+        virtual float getDrawbarPull();
+        virtual float getWheelSinkage();
     };
 }
 

@@ -5,11 +5,18 @@
 #include <math.h>
 
 namespace Hina {
-    class BasicForceSolver : public WheelForceSolver {
+    class BekkerForceSolver : public WheelForceSolver {
+
+    private:
+        using integrand_ptr = double(*)(double, void*);
+        struct static_integrand_param {
+            SoilPatch s;
+            float theta_s;
+        };
 
     public:
-        BasicForceSolver() {};
-        ~BasicForceSolver() {};
+        BekkerForceSolver() {};
+        ~BekkerForceSolver() {};
 
         void step();
         float getDrawbarPull();
