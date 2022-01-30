@@ -8,8 +8,8 @@ int main() {
     BekkerForceSolver sol;
     SoilPatch s;
     Wheel w;
-    w.r = 10;
-    w.b = 10;
+    w.r = 3;
+    w.b = 1;
 
     s.init_parameters(0.8f*1000, 37.2f, 1370, 814000, 1, 0.40f, 0.15f, 1600, 1, (0.043 * 3.0f) + 0.036f, (0.020f * 3.0f) + 0.013f);
 

@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/includes",
-                "${workspaceFolder}/includes/core/solver/DemoForceSolver",
+                "${workspaceFolder}/includes/core/solver/BekkerForceSolver",
                 "${workspaceFolder}/includes"
             ],
             "defines": [],

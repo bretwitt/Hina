@@ -2,7 +2,6 @@
 #define _BASIC_FORCE_SOLVER
 
 #include "../WheelForceSolver.h"
-#include <math.h>
 
 namespace Hina {
     class BekkerForceSolver : public WheelForceSolver {
@@ -12,6 +11,13 @@ namespace Hina {
         struct static_integrand_param {
             SoilPatch s;
             float theta_s;
+        };
+        struct integral_param {
+            double k;
+            static_integrand_param* p;
+            SoilPatch s;
+            Wheel wheel;
+            double (*integrand) (double, void *);
         };
 
     public:

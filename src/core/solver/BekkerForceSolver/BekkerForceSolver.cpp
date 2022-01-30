@@ -3,10 +3,11 @@
 #include <functional>
 #include <iostream>
 #include <math.h>
+#include <gsl/gsl_roots.h>
+#include <gsl/gsl_errno.h>
 
 using namespace Hina;
 using namespace std;
-using namespace std::placeholders; 
 
 void BekkerForceSolver::step() 
 {
@@ -48,33 +49,65 @@ float BekkerForceSolver::getStaticSinkage(SoilPatch s, Wheel wheel)
 float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) 
 {
     float k = (wheel.r, s.n + 1) * (s.k_c + (s.k_phi * wheel.b));
-    static_integrand_param* p = new static_integrand_param();
+    float res = -1;
+
+    auto p = new static_integrand_param();
     p->s = s;
-    p->theta_s = 0.9;
+    p->theta_s = 0;
 
     auto integrand = [](double theta, void * params) -> double {
         auto p = (struct static_integrand_param *) params;
         return cos(theta) - (pow(cos(p->theta_s), p->s.n) * cos(theta)); 
     };
 
-    auto integral = [this, &k, &s, &integrand, &p] (float theta_s) -> double {
-        p->theta_s = theta_s;
-        
+    auto integral = [] (double theta_s, void* params) -> double {
+        auto p = (struct integral_param *) params;
+        auto p1 = new static_integrand_param {
+            .s = p->s,
+            .theta_s = theta_s
+        };
+
         double result, error;
         gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
         gsl_function F;
-        F.function = integrand;
-        F.params = p;
-        gsl_integration_qags (&F, 0, 1, 0, 1e-7, 1000, w, &result, &error);
-        printf("result = %.18f\n", result);
+        F.function = p->integrand;
+        F.params = p1;
+        gsl_integration_qags (&F, -theta_s, theta_s, 0, 1e-7, 1000, w, &result, &error);
         gsl_integration_workspace_free (w);
-
-        return k * result;
+        return p->wheel.W - (p->k * result);
     };
-    std::cout << integral(0.4) << std::endl;
+
+    auto integral_param_struct = new integral_param {
+        .k = k,
+        .p = p,
+        .s = s,
+        .wheel = wheel,
+        .integrand = integrand
+    };
+
+    std::cout << "Starting static contact angle search..." << std::endl;
+
+    gsl_function F;
+    F.function = integral;
+    F.params = integral_param_struct;
+    gsl_root_fsolver * sol = gsl_root_fsolver_alloc (gsl_root_fsolver_bisection);
+    gsl_root_fsolver_set (sol, &F, 0, M_PI_2);
+    int status;
+    int iter = 0;
+    do {
+        iter++;
+        status = gsl_root_fsolver_iterate (sol);
+        res = gsl_root_fsolver_root (sol);
+        status = gsl_root_test_residual (res, 1e-7);
+        std::cout << "iter: " << iter << " res: " << res << " status: " << status << std::endl;
+    } while (status == GSL_CONTINUE && iter < 1000);
+    
+    gsl_root_fsolver_free (sol);
 
     delete (p);
-    return -1;
+    delete (integral_param_struct);
+
+    return res;
 }
 
 float BekkerForceSolver::getSigma(SoilPatch s, Wheel wheel, float theta, float h_s) 

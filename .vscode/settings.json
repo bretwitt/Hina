@@ -2,5 +2,21 @@
     "files.associations": {
         "cmath": "cpp",
         "ostream": "cpp"
-    }
+    },
+    "background.style": {
+        "content": "''",
+        "pointer-events": "none",
+        "position": "absolute",
+        "z-index": "99999",
+        "width": "70%",
+        "height": "100%",
+        "margin-left":"30%",
+        "background-position": "right",
+        "background-size": "cover",
+        "background-repeat": "no-repeat",
+        "opacity": 0.1
+    },
+
+    "background.useDefault": false,
+    "background.customImages": [ "http://pixelartmaker-data-78746291193.nyc3.digitaloceanspaces.com/image/edd6c11f22c9523.png" ] 
 }
