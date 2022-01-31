@@ -21,13 +21,123 @@ float BekkerForceSolver::getDrawbarPull()
     return 0;
 }   
 
+float BekkerForceSolver::getWheelSinkage() {
+    return getStaticSinkage(this->soil,this->wheel) + getDynamicSinkage(this->soil,this->wheel);
+}
+
 /*
  * Get the kinematic sinkage of the wheel.
  * 
  */
-float BekkerForceSolver::getWheelSinkage() 
+float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w) 
 {
-    return 0;
+    struct integrand_params {
+        BekkerForceSolver* solver;
+        double h;
+        SoilPatch s;
+        Wheel w;
+    };
+    struct integral_params {
+        BekkerForceSolver* solver;
+        SoilPatch s;
+        Wheel w;
+        gsl_func_ptr integrand;
+    };
+    struct function_params {
+        BekkerForceSolver* solver;
+        Wheel wheel;
+        SoilPatch s;
+        gsl_func_ptr integral;
+        gsl_func_ptr integrand;
+    };
+
+    auto integrand = [](double theta, void* params) -> double {
+        auto p = *(struct integrand_params*) params;
+        return (p.solver->getTAUX(p.s,p.w, theta, p.solver->getStaticSinkage(p.s,p.w)) * sin(theta)) + (p.solver->getSigma(p.s,p.w,theta,p.h) * cos(theta));
+    };
+
+    auto integral = [](double h, void* params) -> double {
+        auto p = *(struct integral_params*) params;
+
+        auto p1 = new integrand_params {
+            .solver = p.solver,
+            .h = h,
+            .s = p.s,
+            .w = p.w
+        };
+
+        double theta_r = p.solver->getThetaR(p.w,p.s,h);
+        double theta_f = p.solver->getThetaF(p.w,h);
+
+        double result, error;
+        gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+
+        gsl_function F;
+        F.function = p.integrand;
+        F.params = p1;
+
+        gsl_integration_qags (&F, theta_r, theta_f, 0, 1e-7, 1000, w, &result, &error);
+
+        gsl_integration_workspace_free (w);
+        delete(p1);
+
+        return result;
+    };
+
+    auto fn = [](double h, void* params) -> double {
+        auto p = *(struct function_params *) params;
+        auto integr_params = new integral_params {
+            .solver = p.solver,            
+            .s = p.s,
+            .w = p.wheel,
+            .integrand = p.integrand
+        };
+        double res = p.integral(h, integr_params);
+        delete(integr_params);
+        return p.wheel.W - (p.wheel.r * p.wheel.b * res);
+    };
+
+    auto p = new function_params {
+        .solver = this,
+        .wheel = wheel,
+        .s = s,
+        .integral = integral,
+        .integrand = integrand
+    };
+
+    // auto params = new integral_params {
+    //     .solver = this,
+    //     .s = s,
+    //     .w = w,
+    //     .integrand = integrand,
+    // };
+
+    auto params = new integrand_params {
+        .solver = this,
+        .h = 0.5,
+        .s = s,
+        .w = w
+    };
+
+    vector<double> x,y;
+
+    for(double i = 0; i < 1.0f; i += 0.05) {
+        double res = integrand(i, params);
+        y.push_back(res);
+        x.push_back(i);
+    }
+
+    plt::plot(x,y);
+    plt::show();
+
+    delete(params);
+    // Solve for h s.t fn(h) = 0 
+    // double res = fn(0.5f, (void*)(p));
+    double res = -1;
+    
+    delete p;
+
+    return res;
 }
 
 /*
@@ -38,7 +148,8 @@ float BekkerForceSolver::getWheelSinkage()
  */
 float BekkerForceSolver::getStaticSinkage(SoilPatch s, Wheel wheel) 
 {
-    return 0;
+    float theta_s = getStaticContactAngle(s,wheel);
+    return wheel.r * ( 1 - cos(theta_s));
 }
 
 /*
@@ -54,13 +165,13 @@ float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) const
     float res = -1;
 
     auto integrand = [](double theta, void * params) -> double {
-        auto p = (struct static_integrand_param *) params;
+        auto p = (struct static_contact_integrand_param *) params;
         return pow(cos(theta) - cos(p->theta_s), p->s.n) * cos(theta); 
     };
 
     auto integral = [] (double theta_s, void* params) -> double {
-        auto p = (struct integral_param *) params;
-        auto p1 = new static_integrand_param {
+        auto p = (struct static_contact_integral_param *) params;
+        auto p1 = new static_contact_integrand_param {
             .s = p->s,
             .theta_s = theta_s
         };
@@ -80,7 +191,7 @@ float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) const
         return W - (k * result);
     };
 
-    auto integral_param_struct = new integral_param {
+    auto integral_param_struct = new static_contact_integral_param {
         .k = k,
         .s = s,
         .wheel = wheel,
@@ -126,10 +237,6 @@ float BekkerForceSolver::getSigma(SoilPatch s, Wheel wheel, float theta, float h
     return sigma;
 }
 
-double BekkerForceSolver::getStaticContactIntegrand(SoilPatch s, float theta, float theta_s) {
-    return cos(theta) - (pow(cos(theta_s), s.n) * cos(theta)); 
-}
-
 float BekkerForceSolver::getKineticContactExitAngle(SoilPatch s, Wheel wheel, float h_s) 
 {
     return acos(1 - (h_s / wheel.r));   
@@ -142,10 +249,21 @@ float BekkerForceSolver::getKineticContactEntryAngle(SoilPatch s, Wheel wheel, f
 
 float BekkerForceSolver::getTAUX(SoilPatch s, Wheel wheel, float theta, float h_s) 
 {
+    std::cout <<  (1 - exp(-getJX(s,wheel,theta, h_s) / s.k_x)) << std::endl;
     return (s.c + (getSigma(s,wheel,theta,h_s) * tan(s.phi))) * (1 - exp(-getJX(s,wheel,theta, h_s) / s.k_x));
 }
 
 float BekkerForceSolver::getJX(SoilPatch s, Wheel wheel, float theta, float h_s) 
 {
     return wheel.r * (getKineticContactExitAngle(s,wheel,h_s) - theta - ((1 - wheel.s) * (sin(getKineticContactExitAngle(s,wheel,h_s)) - sin(theta))));
+}
+
+float BekkerForceSolver::getThetaF(Wheel w, double h) 
+{
+    return acos(1 - (h / w.r));
+}
+
+float BekkerForceSolver::getThetaR(Wheel w, SoilPatch s, double h) 
+{
+    return acos(1 - ((s.l_s * h) / w.r));
 }

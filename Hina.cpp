@@ -25,6 +25,12 @@ int main() {
 
     float contact_angles = sol.getStaticContactAngle(s,w);
     std::cout << contact_angles << std::endl;
+    
+    float sinkage = sol.getStaticSinkage(s,w);
+    std::cout << sinkage << std::endl;
+
+    float dyn_sinkage = sol.getDynamicSinkage(s,w);
+    std::cout << dyn_sinkage << std::endl;
 
 
 }

@@ -8,7 +8,7 @@ namespace Hina {
     
     class WheelForceSolver {
 
-    private:
+    protected:
         Wheel wheel;
         SoilPatch soil;
         
