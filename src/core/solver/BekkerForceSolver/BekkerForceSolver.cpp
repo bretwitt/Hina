@@ -48,7 +48,7 @@ float BekkerForceSolver::getStaticSinkage(SoilPatch s, Wheel wheel)
  * @param wheel The wheel.
  * @return The static contact angle of the wheel.
  */
-float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) 
+float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) const
 {
     float k = pow(wheel.r, s.n + 1) * (s.k_c + (s.k_phi * wheel.b));   
     float res = -1;
@@ -72,7 +72,12 @@ float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel)
         F.params = p1;
         gsl_integration_qags (&F, -theta_s, theta_s, 0, 1e-7, 1000, w, &result, &error);
         gsl_integration_workspace_free (w);
-        return p->wheel.W - (p->k * result);
+
+        double W = p->wheel.W;
+        double k = p->k;
+
+        delete(p1);
+        return W - (k * result);
     };
 
     auto integral_param_struct = new integral_param {

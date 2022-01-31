@@ -28,7 +28,7 @@ namespace Hina {
         float getWheelSinkage();
 
         float getStaticSinkage(SoilPatch s, Wheel wheel);
-        float getStaticContactAngle(SoilPatch s, Wheel wheel);
+        float getStaticContactAngle(SoilPatch s, Wheel wheel) const;
         double getStaticContactIntegrand(SoilPatch s, float theta, float theta_s);
         float getKineticContactExitAngle(SoilPatch s, Wheel wheel, float h_s);
         float getKineticContactEntryAngle(SoilPatch s, Wheel wheel, float h_s);
