@@ -14,10 +14,12 @@ void SoilPatch::init_parameters(float c, float phi, float k_c, float k_phi, floa
     this->c = c;
     this->phi = phi;
     this->k_c = k_c;
-    this->X_c = X_c;
+    this->k_phi = k_phi;
     this->n = n;
     this->a_0 = a_0;
     this->a_1 = a_1;
     this->rho_d = rho_d;
     this->l_s = l_s;
+    this->k_x = k_x;
+    this->k_y = k_y;
 }

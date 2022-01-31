@@ -5,7 +5,9 @@
 #include <math.h>
 #include <gsl/gsl_roots.h>
 #include <gsl/gsl_errno.h>
+#include <matplotlibcpp.h>
 
+namespace plt = matplotlibcpp;
 using namespace Hina;
 using namespace std;
 
@@ -48,16 +50,12 @@ float BekkerForceSolver::getStaticSinkage(SoilPatch s, Wheel wheel)
  */
 float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) 
 {
-    float k = (wheel.r, s.n + 1) * (s.k_c + (s.k_phi * wheel.b));
+    float k = pow(wheel.r, s.n + 1) * (s.k_c + (s.k_phi * wheel.b));   
     float res = -1;
-
-    auto p = new static_integrand_param();
-    p->s = s;
-    p->theta_s = 0;
 
     auto integrand = [](double theta, void * params) -> double {
         auto p = (struct static_integrand_param *) params;
-        return cos(theta) - (pow(cos(p->theta_s), p->s.n) * cos(theta)); 
+        return pow(cos(theta) - cos(p->theta_s), p->s.n) * cos(theta); 
     };
 
     auto integral = [] (double theta_s, void* params) -> double {
@@ -79,13 +77,10 @@ float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel)
 
     auto integral_param_struct = new integral_param {
         .k = k,
-        .p = p,
         .s = s,
         .wheel = wheel,
         .integrand = integrand
     };
-
-    std::cout << "Starting static contact angle search..." << std::endl;
 
     gsl_function F;
     F.function = integral;
@@ -99,12 +94,10 @@ float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel)
         status = gsl_root_fsolver_iterate (sol);
         res = gsl_root_fsolver_root (sol);
         status = gsl_root_test_residual (res, 1e-7);
-        std::cout << "iter: " << iter << " res: " << res << " status: " << status << std::endl;
     } while (status == GSL_CONTINUE && iter < 1000);
     
     gsl_root_fsolver_free (sol);
 
-    delete (p);
     delete (integral_param_struct);
 
     return res;

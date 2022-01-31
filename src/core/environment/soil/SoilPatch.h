@@ -10,7 +10,6 @@ namespace Hina {
         void init_parameters(float c, float phi, float k_c, float k_phi, float n, float a_0, float a_1, float rho_d, float l_s, float k_x, float k_y);
         float c;
         float phi;
-        float X_c;
         float k_c;
         float k_phi;
         float n;

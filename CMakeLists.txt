@@ -10,5 +10,7 @@ add_library (Hina STATIC
                 src/core/body/Body.h src/core/body/Wheel.h
             )
 
-add_executable(Hina_Driver Hina.cpp)
-target_link_libraries(Hina_Driver Hina gsl)
+        
+include_directories(/usr/include/python3.8)
+add_executable(Hina_Driver Hina.cpp )
+target_link_libraries(Hina_Driver Hina gsl python3.8)

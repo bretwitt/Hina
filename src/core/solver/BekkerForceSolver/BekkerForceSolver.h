@@ -10,11 +10,10 @@ namespace Hina {
         using integrand_ptr = double(*)(double, void*);
         struct static_integrand_param {
             SoilPatch s;
-            float theta_s;
+            double theta_s;
         };
         struct integral_param {
             double k;
-            static_integrand_param* p;
             SoilPatch s;
             Wheel wheel;
             double (*integrand) (double, void *);
