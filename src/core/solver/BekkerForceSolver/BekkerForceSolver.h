@@ -30,15 +30,13 @@ namespace Hina {
         float getDynamicSinkage(SoilPatch s, Wheel wheel);
         float getStaticSinkage(SoilPatch s, Wheel wheel);
         float getStaticContactAngle(SoilPatch s, Wheel wheel) const;
-        float getKineticContactExitAngle(SoilPatch s, Wheel wheel, float h_s);
-        float getKineticContactEntryAngle(SoilPatch s, Wheel wheel, float h_s);
-        float getSigma(SoilPatch s, Wheel wheel, float theta, float h_s);
-        float getJX(SoilPatch s, Wheel wheel, float theta, float h_s);
-        float getTAUX(SoilPatch s, Wheel wheel, float theta, float h_s);
+        float getKineticContactExitAngle(SoilPatch s, Wheel wheel);
+        float getKineticContactEntryAngle(SoilPatch s, Wheel wheel);
+        float getSigma(SoilPatch s, Wheel wheel, float theta);
+        float getJX(SoilPatch s, Wheel wheel, float theta);
+        float getTAUX(SoilPatch s, Wheel wheel, float theta);
         float getFX(SoilPatch s, Wheel wheel, float theta, float theta_r, float theta_f);
         float getFZ(SoilPatch s, Wheel wheel, float theta, float theta_r, float theta_f);
-        float getThetaF(Wheel w, double h);
-        float getThetaR(Wheel w, SoilPatch s, double h);
     };
 }
 
