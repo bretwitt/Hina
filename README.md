@@ -1,3 +1,6 @@
 # Hina
 
-A terramechanics library 
+A terramechanics library.
+
+# Dependencies
+1. GSL
