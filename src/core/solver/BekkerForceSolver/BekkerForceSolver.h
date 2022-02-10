@@ -7,7 +7,6 @@ namespace Hina {
     class BekkerForceSolver : public WheelForceSolver {
 
     private:
-        using gsl_func_ptr = double(*)(double,void*);
         struct static_contact_integrand_param {
             SoilPatch s;
             double theta_s;

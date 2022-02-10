@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(Hina VERSION 0.1.0)
+project(Hina)
+
+
+add_subdirectory(src/core/math)
 
 add_library (Hina STATIC
                 src/core/solver/WheelForceSolver.h  src/core/solver/WheelForceSolver.cpp
@@ -12,5 +15,9 @@ add_library (Hina STATIC
 
         
 include_directories(/usr/include/python3.8)
-add_executable(Hina_Driver Hina.cpp )
+
+add_executable(Hina_Driver Hina.cpp)
+
+target_compile_features(Hina_Driver PRIVATE cxx_std_17)
+
 target_link_libraries(Hina_Driver Hina gsl python3.8)
