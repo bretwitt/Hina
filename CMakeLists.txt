@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.0.0)
 project(Hina)
 
 
-add_subdirectory(src/core/math)
-
 add_library (Hina STATIC
                 src/core/solver/WheelForceSolver.h  src/core/solver/WheelForceSolver.cpp
                 src/core/environment/soil/SoilPatch.h src/core/environment/soil/SoilPatch.cpp                                   
