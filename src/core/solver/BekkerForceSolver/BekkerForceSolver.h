@@ -23,7 +23,7 @@ namespace Hina {
         ~BekkerForceSolver() {};
 
         void step();
-        float getDrawbarPull();
+        float getDrawbarPull(SoilPatch s, Wheel w);
         float getWheelSinkage();
 
         float getDynamicSinkage(SoilPatch s, Wheel wheel);

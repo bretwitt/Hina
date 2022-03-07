@@ -19,7 +19,7 @@ int main() {
     w.b = 0.11;
     w.W = 64.68f;
     w.beta = 5.0f;
-    w.s = 0.5f;
+    w.s = 0.8f;
 
     sol.initialize(s,w);
     
@@ -35,17 +35,17 @@ int main() {
     float dyn_sinkage = sol.getDynamicSinkage(s,w);
     std::cout << dyn_sinkage << std::endl;
 
-    // std::vector<double> x,y;
+    float drawbar_pull = sol.getDrawbarPull(s,w);
+    std::cout << drawbar_pull << std::endl;
 
-    // for(double i = -M_PI_2; i < M_PI_2; i+=0.01) {
-    //     double _y = sol.getTAUX(s, w, i, 0.016);
-    //     x.push_back(i);
-    //     y.push_back(_y);
-    //     std::cout << _y << std::endl;
-    // }    
-    // plt::plot(x, y);
-    // plt::title("Tau");
-    // plt::show();
+    std::vector<double> x,y;
+    for(double i = 0.2; i < 0.8; i+=0.1) {
+        std::cout << "s " << i << std::endl;
+        x.push_back(i);
+        w.s = i;
+        y.push_back(sol.getDrawbarPull(s,w));
+    }
 
-
+    plt::plot(x,y);
+    plt::show();
 }

@@ -16,9 +16,52 @@ void BekkerForceSolver::step()
 
 }
 
-float BekkerForceSolver::getDrawbarPull() 
+/*
+ * Get the drawbar pull on a wheel driving on a given soil patch
+ * @param s The soil patch.
+ * @param wheel The wheel.
+ * @return The drawbar force in Newtons
+ */
+float BekkerForceSolver::getDrawbarPull(SoilPatch s, Wheel wheel) 
 {
-    return 0;
+    struct integrand_params {
+        BekkerForceSolver* solver;
+        SoilPatch s;
+        Wheel w;
+        double h_k;
+    };
+    
+    auto integrand = [](double theta, void* params) -> double {
+        integrand_params p = *(integrand_params*) params;
+        Wheel w = p.w;
+        SoilPatch s = p.s;
+        BekkerForceSolver* solver = p.solver;
+        return w.b * w.r * 
+                ((solver->getTAUX(s,w,theta,p.h_k) * cos(theta)) 
+                - (solver->getSigma(s,w,theta,p.h_k) * sin(theta)));
+    };
+    
+    double h_k = getDynamicSinkage(s,wheel);
+    double theta_r = getKineticContactExitAngle(s,wheel,h_k);
+    double theta_f = getKineticContactEntryAngle(s,wheel,h_k);
+    auto params = new integrand_params {
+        .solver = this,
+        .s = s,
+        .w = wheel,
+        .h_k = h_k
+    };
+
+    double error, quad;
+
+    gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
+    gsl_function F;
+    F.function = integrand;
+    F.params = params;
+    gsl_integration_qags (&F, theta_r, theta_f, 0, 1e-7, 200, w, &quad, &error);
+    gsl_integration_workspace_free(w);
+
+    delete (params);
+    return wheel.r * wheel.b * quad;
 }   
 
 float BekkerForceSolver::getWheelSinkage() {
@@ -27,6 +70,9 @@ float BekkerForceSolver::getWheelSinkage() {
 
 /*
  * Get the kinematic sinkage of the wheel.
+ * @param s The soil patch.
+ * @param wheel The wheel.
+ * @return The sinkage due to kinetic motion of the wheel.
  */
 float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w) 
 {
@@ -58,16 +104,12 @@ float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w)
             .s = p.s,
             .w = p.w
         };
-        std::cout << h_k << std::endl;
 
         double quad;
         double error;
 
         double theta_f = p.solver->getKineticContactEntryAngle(p.s, p.w, h_k);
         double theta_r = p.solver->getKineticContactExitAngle(p.s, p.w, h_k);
-
-        std::cout << "theta_f " << theta_f << std::endl;
-        std::cout << "theta_r " << theta_r << std::endl;
 
         gsl_integration_workspace * w = gsl_integration_workspace_alloc (1000);
         gsl_function F;
@@ -77,7 +119,6 @@ float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w)
         gsl_integration_workspace_free (w);
 
         delete i_p;
-
         return p.w.W - (p.w.r * p.w.b * quad);
     };
 
@@ -93,7 +134,7 @@ float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w)
     F.function = integral;
     F.params = params;
     gsl_root_fsolver * sol = gsl_root_fsolver_alloc (gsl_root_fsolver_bisection);
-    gsl_root_fsolver_set (sol, &F, 0.001, 0.2);
+    gsl_root_fsolver_set (sol, &F, 0, 0.1);
     int status;
     int iter = 0;
     do {
@@ -101,11 +142,10 @@ float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w)
         status = gsl_root_fsolver_iterate (sol);
         res = gsl_root_fsolver_root (sol);
         status = gsl_root_test_residual (res, 1e-7);
-    } while (status == GSL_CONTINUE && iter < 1000);
+    } while (status == GSL_CONTINUE && iter < 20);
     
     gsl_root_fsolver_free (sol);
 
-    // std::cout << integral(0.016, params) << std::endl;
     return res;
 }
 
@@ -113,7 +153,7 @@ float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w)
  * Get the static sinkage of the wheel.
  * @param s: the soil patch.
  * @param wheel: the wheel.
- * @return the static sinkage of the wheel.
+ * @return The static sinkage of the wheel in meters
  */
 float BekkerForceSolver::getStaticSinkage(SoilPatch s, Wheel wheel) 
 {
@@ -126,7 +166,7 @@ float BekkerForceSolver::getStaticSinkage(SoilPatch s, Wheel wheel)
  *
  * @param s The soil patch.
  * @param wheel The wheel.
- * @return The static contact angle of the wheel.
+ * @return The static contact angle of the wheel in radians
  */
 float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) const
 {
@@ -180,7 +220,7 @@ float BekkerForceSolver::getStaticContactAngle(SoilPatch s, Wheel wheel) const
         status = gsl_root_fsolver_iterate (sol);
         res = gsl_root_fsolver_root (sol);
         status = gsl_root_test_residual (res, 1e-7);
-    } while (status == GSL_CONTINUE && iter < 1000);
+    } while (status == GSL_CONTINUE && iter < 20);
     
     gsl_root_fsolver_free (sol);
 
@@ -220,7 +260,7 @@ float BekkerForceSolver::getKineticContactExitAngle(SoilPatch s, Wheel wheel, fl
 
 float BekkerForceSolver::getTAUX(SoilPatch s, Wheel wheel, float theta, float h_k) 
 {
-    return (s.c + (getSigma(s,wheel,theta,h_k) * tan(s.phi))) * (1 - exp(-getJX(s, wheel, theta, h_k / s.k_x)));
+    return (s.c + (getSigma(s,wheel,theta,h_k) * tan(s.phi))) * (1 - exp(-getJX(s, wheel, theta, h_k) / s.k_x));
 }
 
 float BekkerForceSolver::getJX(SoilPatch s, Wheel wheel, float theta, float h_k) 
