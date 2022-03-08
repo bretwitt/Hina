@@ -5,9 +5,9 @@
 #include <math.h>
 #include <gsl/gsl_roots.h>
 #include <gsl/gsl_errno.h>
-#include <matplotlibcpp.h>
+// #include <matplotlibcpp.h>
 
-namespace plt = matplotlibcpp;
+// namespace plt = matplotlibcpp;
 using namespace Hina;
 using namespace std;
 

@@ -2,16 +2,21 @@
 #include "src/core/solver/BekkerForceSolver/BekkerForceSolver.h"
 #include <math.h>
 #include <vector>
-#include <matplotlibcpp.h>
+// #include <matplotlibcpp.h>
 
 using namespace Hina;
-namespace plt = matplotlibcpp;
+// namespace plt = matplotlibcpp;
 
 
 #define DEG_TO_RAD 0.0174533
+#include <chrono>
+using std::chrono::high_resolution_clock;
+using std::chrono::duration_cast;
+using std::chrono::duration;
+using std::chrono::milliseconds;
 
 int main() {
-
+    auto t1 = high_resolution_clock::now();
     BekkerForceSolver sol;
     SoilPatch s;
     Wheel w;
@@ -38,14 +43,17 @@ int main() {
     float drawbar_pull = sol.getDrawbarPull(s,w);
     std::cout << drawbar_pull << std::endl;
 
-    std::vector<double> x,y;
-    for(double i = 0.2; i < 0.8; i+=0.1) {
-        std::cout << "s " << i << std::endl;
-        x.push_back(i);
-        w.s = i;
-        y.push_back(sol.getDrawbarPull(s,w));
-    }
 
-    plt::plot(x,y);
-    plt::show();
+    // plt::plot(x,y);
+    // plt::show();
+    auto t2 = high_resolution_clock::now();
+
+    /* Getting number of milliseconds as an integer. */
+    auto ms_int = duration_cast<milliseconds>(t2 - t1);
+
+    /* Getting number of milliseconds as a double. */
+    duration<double, std::milli> ms_double = t2 - t1;
+
+    std::cout << ms_int.count() << "ms\n";
+    std::cout << ms_double.count() << "ms\n";
 }

@@ -18,4 +18,4 @@ add_executable(Hina_Driver Hina.cpp)
 
 target_compile_features(Hina_Driver PRIVATE cxx_std_17)
 
-target_link_libraries(Hina_Driver Hina gsl python3.8)
+target_link_libraries(Hina_Driver Hina gsl gslcblas)
