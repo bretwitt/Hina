@@ -36,14 +36,14 @@ float BekkerForceSolver::getDrawbarPull(SoilPatch s, Wheel wheel)
         Wheel w = p.w;
         SoilPatch s = p.s;
         BekkerForceSolver* solver = p.solver;
-        return w.b * w.r * 
-                ((solver->getTAUX(s,w,theta,p.h_k) * cos(theta)) 
+        return ((solver->getTAUX(s,w,theta,p.h_k) * cos(theta)) 
                 - (solver->getSigma(s,w,theta,p.h_k) * sin(theta)));
     };
     
     double h_k = getDynamicSinkage(s,wheel);
     double theta_r = getKineticContactExitAngle(s,wheel,h_k);
     double theta_f = getKineticContactEntryAngle(s,wheel,h_k);
+
     auto params = new integrand_params {
         .solver = this,
         .s = s,
@@ -57,11 +57,13 @@ float BekkerForceSolver::getDrawbarPull(SoilPatch s, Wheel wheel)
     gsl_function F;
     F.function = integrand;
     F.params = params;
-    gsl_integration_qags (&F, theta_r, theta_f, 0, 1e-7, 200, w, &quad, &error);
+    gsl_integration_qags (&F, theta_r, theta_f, 0, 1e-6, 200, w, &quad, &error);
     gsl_integration_workspace_free(w);
 
     delete (params);
-    return wheel.r * wheel.b * quad;
+
+    float res = wheel.r * wheel.b * quad;
+    return res;
 }   
 
 float BekkerForceSolver::getWheelSinkage() {
@@ -76,6 +78,7 @@ float BekkerForceSolver::getWheelSinkage() {
  */
 float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w) 
 {
+
     struct integrand_params {
         BekkerForceSolver* solver;
         double h_k;
@@ -92,7 +95,8 @@ float BekkerForceSolver::getDynamicSinkage(SoilPatch s, Wheel w)
 
     auto integrand = [](double theta, void* params) -> double {
         auto p = *(struct integrand_params*) params;
-        double res = (p.solver->getTAUX(p.s, p.w, theta, p.h_k) * sin(theta)) + (p.solver->getSigma(p.s, p.w, theta, p.h_k) * cos(theta));
+        double res = (p.solver->getTAUX(p.s, p.w, theta, p.h_k) * sin(theta)) 
+		                + (p.solver->getSigma(p.s, p.w, theta, p.h_k) * cos(theta));
         return res;
     };
 
